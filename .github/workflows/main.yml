@@ -2,7 +2,8 @@ name: Generate and Deploy Temperature Art
 
 # Controls when the action will run.
 # Runs on the 1st of every month at midnight UTC.
-on:
+# Trigger update
+ on:
   schedule:
     - cron: '0 0 1 * *'
   # Allows you to run this workflow manually from the Actions tab
