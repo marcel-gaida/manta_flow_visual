@@ -10,6 +10,9 @@ on:
 
 jobs:
   build-and-deploy:
+    # Add this permissions block to grant write access to the token
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
