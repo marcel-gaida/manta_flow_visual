@@ -1,198 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<title>Manta Flow Visual</title>
-		<!-- Tailwind CSS for new visualization styling -->
-		<script src="https://cdn.tailwindcss.com"></script>
-		<!-- React Libraries for new visualization -->
-		<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-		<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-		<!-- Babel to transpile JSX in the browser -->
-		<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-		<!-- Recharts for charts -->
-		<script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
-		<style>
-			/* Combined and cleaned up styles */
-			@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-			body {
-				font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-				background-color: #0d1117;
-				color: #c9d1d9;
-				margin: 0;
-				padding: 2rem;
-				box-sizing: border-box;
-			}
-			h1, .h1-style {
-				font-size: 1.5rem;
-				text-align: center;
-				margin: 1rem;
-				font-weight: bold;
-			}
-			p {
-				text-align: center;
-				max-width: 600px;
-				color: #8b949e;
-				margin-left: auto;
-				margin-right: auto;
-			}
-			.image-container {
-				border: 1px solid #30363d;
-				border-radius: 8px;
-				padding: 1rem;
-				background-color: #161b22;
-				margin-top: 2rem;
-				max-width: 1200px; /* Increased max-width */
-				margin-left: auto;
-				margin-right: auto;
-			}
-			img {
-				max-width: 100%;
-				height: auto;
-				display: block;
-				border-radius: 6px;
-			}
-			footer {
-				margin-top: 2rem;
-				font-size: 0.8rem;
-				color: #8b949e;
-				text-align: center;
-			}
-			a {
-				color: #58a6ff;
-				text-decoration: none;
-			}
-			a:hover {
-				text-decoration: underline;
-			}
-		</style>
-	</head>
-	<body>
-		<!-- Original Temperature Anomaly Visualization -->
-		<div class="mb-16">
-			<h1 class="h1-style">Global Temperature Anomaly Visualization</h1>
-			<p>
-				This image visualizes global temperature anomalies from 1880 to the present. The timeline progresses from left to right. The color and vertical position of each dot represent the temperature anomaly for that time period (red/high for warmer, blue/low for colder).
-			</p>
-			<div class="image-container">
-				<!-- The image is loaded from the root of the gh-pages branch -->
-				<img src="temperature_wave.png" alt="Global Temperature Anomaly Wave Visualization">
-			</div>
-			<footer>
-				<p>This visualization is automatically updated monthly. Powered by <a href="https://global-warming.org/api/temperature-api" target="_blank">global-warming.org API</a> and GitHub Actions.</p>
-			</footer>
-		</div>
-
-		<!-- Divider -->
-		<hr class="border-gray-700 my-16">
-		
-		<!-- Container for the new Air Quality visualization -->
-		<div id="air-quality-viz-container"></div>
-
-		<!-- Script for the new Air Quality React chart -->
-		<script type="text/babel">
-			const { useState, useEffect } = React;
-			const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
-
-			// URL pointing to your data file in the 'main' branch.
-			const DATA_URL = 'https://raw.githubusercontent.com/marcel-gaida/manta_flow_visual/main/bin/air_quality_data.json';
-
-			const formatXAxis = (tickItem) => {
-				const date = new Date(tickItem);
-				return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-			};
-
-			function AirQualityApp() {
-				const [chartData, setChartData] = useState([]);
-				const [isLoading, setIsLoading] = useState(true);
-				const [error, setError] = useState(null);
-
-				useEffect(() => {
-					const fetchData = async () => {
-						try {
-							const response = await fetch(DATA_URL);
-							if (!response.ok) {
-								throw new Error(`HTTP error! Status: ${response.status}`);
-							}
-							const jsonData = await response.json();
-							const formattedData = jsonData.map(d => ({
-								date: d["Recorded At: Week"],
-								aqi: parseFloat(d["Average of Aqi Us"]).toFixed(2),
-								tempF: parseFloat(d["Average of Temperature in F"]).toFixed(2),
-							}));
-							setChartData(formattedData);
-						} catch (e) {
-							console.error("Failed to fetch or process data:", e);
-							setError(e.message);
-						} finally {
-							setIsLoading(false);
-						}
-					};
-					fetchData();
-				}, []);
-
-				if (isLoading) {
-					return (
-						<div className="p-8 flex justify-center items-center">
-							<h2 className="text-2xl text-cyan-400 animate-pulse">Loading Air Quality Data...</h2>
-						</div>
-					);
-				}
-
-				if (error) {
-					return (
-						<div className="p-8 flex justify-center items-center">
-							<div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-lg">
-								<h2 className="text-2xl font-bold text-red-300">Error Loading Visualization</h2>
-								<p className="mt-2 text-red-200">{error}</p>
-							</div>
-						</div>
-					);
-				}
-
-				return (
-					<div className="bg-gray-900/0 text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center">
-						<div className="w-full max-w-6xl">
-							<header className="text-center mb-8">
-								<h1 className="h1-style text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
-							</header>
-							<main className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
-								<ResponsiveContainer width="100%" height={500}>
-									<LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
-										<CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-										<XAxis 
-											dataKey="date" 
-											tickFormatter={formatXAxis} 
-											angle={-45}
-											textAnchor="end"
-											height={70}
-											tick={{ fill: '#A0AEC0' }}
-											stroke="#A0AEC0"
-											interval="preserveStartEnd"
-										/>
-										<YAxis yAxisId="left" stroke="#81E6D9" label={{ value: 'US AQI', angle: -90, position: 'insideLeft', fill: '#81E6D9', style: {textAnchor: 'middle'} }} tick={{ fill: '#81E6D9' }} />
-										<YAxis yAxisId="right" orientation="right" stroke="#F6AD55" label={{ value: 'Temp (°F)', angle: 90, position: 'insideRight', fill: '#F6AD55', style: {textAnchor: 'middle'} }} tick={{ fill: '#F6AD55' }} />
-										<Tooltip 
-											contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #2D3748', borderRadius: '0.75rem' }}
-											labelStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
-											formatter={(value, name) => [value, name]}
-											labelFormatter={(label) => new Date(label).toLocaleDateString()}
-										/>
-										<Legend wrapperStyle={{ bottom: 0 }}/>
-										<Line yAxisId="left" type="monotone" dataKey="aqi" name="AQI (US)" stroke="#81E6D9" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-										<Line yAxisId="right" type="monotone" dataKey="tempF" name="Temperature (°F)" stroke="#F6AD55" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-									</LineChart>
-								</ResponsiveContainer>
-							</main>
-						</div>
-					</div>
-				);
-			}
-
-			// Render the React component into its dedicated container.
-			const container = document.getElementById('air-quality-viz-container');
-			const root = ReactDOM.createRoot(container);
-			root.render(<AirQualityApp />);
-		</script>
-	</body>
+<head>
+    <meta charset="UTF-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Temperature Anomaly</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        p {
+            text-align: center;
+            max-width: 600px;
+            color: #8b949e;
+        }
+        .image-container {
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 1rem;
+            background-color: #161b22;
+            margin-top: 2rem;
+            max-width: 100%;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 6px;
+        }
+        footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #8b949e;
+        }
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Global Temperature Anomaly Visualization</h1>
+    <p>
+        This image visualizes global temperature anomalies from 1880 to the present. The timeline progresses from left to right. The color and vertical position of each dot represent the temperature anomaly for that time period (red/high for warmer, blue/low for colder).
+    </p>
+    <div class="image-container">
+        <!-- The image generated by the GitHub Action will be displayed here -->
+        <img src="temperature_wave.png" alt="Global Temperature Anomaly Wave Visualization">
+    </div>
+    <footer>
+        <p>This visualization is automatically updated monthly. Powered by <a href="https://global-warming.org/api/temperature-api" target="_blank">global-warming.org API</a> and GitHub Actions.</p>
+    </footer>
+</body>
 </html>
