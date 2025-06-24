@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Air Quality & Temperature Visualization</title>
-  <!-- Tailwind CSS for styling -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React Libraries -->
+  <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel to transpile JSX in the browser -->
+  <!-- Babel for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Recharts for charts -->
+  <!-- Recharts -->
   <script src="https://unpkg.com/recharts/umd/Recharts.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -22,118 +22,113 @@
   </style>
 </head>
 <body>
-  <!-- The React app will be rendered inside this div -->
   <div id="root"></div>
 
-  <!-- This script contains the entire React application -->
+  <!-- Defer React rendering until window load -->
   <script type="text/babel">
-    const { useState, useEffect } = React;
-    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+    window.onload = function () {
+      const { useState, useEffect } = React;
+      const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
 
-    const DATA_URL = './bin/air_quality_data.json';
+      const DATA_URL = './bin/air_quality_data.json';
 
-    const formatXAxis = (tickItem) => {
-      const date = new Date(tickItem);
-      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-    };
+      const formatXAxis = (tickItem) => {
+        const date = new Date(tickItem);
+        return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      };
 
-    function App() {
-      const [chartData, setChartData] = useState([]);
-      const [isLoading, setIsLoading] = useState(true);
-      const [error, setError] = useState(null);
+      function App() {
+        const [chartData, setChartData] = useState([]);
+        const [isLoading, setIsLoading] = useState(true);
+        const [error, setError] = useState(null);
 
-      useEffect(() => {
-        const fetchData = async () => {
-          try {
-            const response = await fetch(DATA_URL);
-            if (!response.ok) {
-              throw new Error(`Data fetch failed. Make sure 'bin/air_quality_data.json' exists on the 'gh-pages' branch.`);
+        useEffect(() => {
+          const fetchData = async () => {
+            try {
+              const response = await fetch(DATA_URL);
+              if (!response.ok) throw new Error("Failed to fetch data.");
+              const jsonData = await response.json();
+              const formattedData = jsonData.map(d => ({
+                date: d["Recorded At: Week"],
+                aqi: parseFloat(d["Average of Aqi Us"]).toFixed(2),
+                tempF: parseFloat(d["Average of Temperature in F"]).toFixed(2),
+              }));
+              setChartData(formattedData);
+            } catch (err) {
+              setError(err.message);
+            } finally {
+              setIsLoading(false);
             }
-            const jsonData = await response.json();
+          };
+          fetchData();
+        }, []);
 
-            const formattedData = jsonData.map(d => ({
-              date: d["Recorded At: Week"],
-              aqi: parseFloat(d["Average of Aqi Us"]).toFixed(2),
-              tempF: parseFloat(d["Average of Temperature in F"]).toFixed(2),
-            }));
+        if (isLoading) {
+          return (
+            <div className="text-white min-h-screen p-8 flex justify-center items-center">
+              <h2 className="text-2xl text-cyan-400 animate-pulse">Loading Visualization Data...</h2>
+            </div>
+          );
+        }
 
-            setChartData(formattedData);
-          } catch (e) {
-            console.error("Fetch or processing error:", e);
-            setError(e.message);
-          } finally {
-            setIsLoading(false);
-          }
-        };
+        if (error) {
+          return (
+            <div className="text-white min-h-screen p-8 flex justify-center items-center">
+              <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-lg">
+                <h2 className="text-2xl font-bold text-red-300">Error Loading Visualization</h2>
+                <p className="mt-2 text-red-200">{error}</p>
+              </div>
+            </div>
+          );
+        }
 
-        fetchData();
-      }, []);
-
-      if (isLoading) {
         return (
-          <div className="text-white min-h-screen p-8 flex justify-center items-center">
-            <h2 className="text-2xl text-cyan-400 animate-pulse">Loading Visualization Data...</h2>
-          </div>
-        );
-      }
+          <div className="bg-[#0d1117] text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center min-h-screen">
+            <div className="w-full max-w-6xl">
+              <header className="text-center mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
+                <p className="text-lg text-gray-400 mt-2">An interactive visualization of weekly US AQI and Temperature (°F) data.</p>
+              </header>
 
-      if (error) {
-        return (
-          <div className="text-white min-h-screen p-8 flex justify-center items-center">
-            <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-lg">
-              <h2 className="text-2xl font-bold text-red-300">Error Loading Visualization</h2>
-              <p className="mt-2 text-red-200">{error}</p>
+              <main className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
+                <ResponsiveContainer width="100%" height={500}>
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 50 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
+                    <XAxis 
+                      dataKey="date" 
+                      tickFormatter={formatXAxis} 
+                      angle={-45}
+                      textAnchor="end"
+                      height={70}
+                      tick={{ fill: '#A0AEC0' }}
+                      stroke="#A0AEC0"
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis yAxisId="left" stroke="#81E6D9" label={{ value: 'US AQI', angle: -90, position: 'insideLeft', fill: '#81E6D9', style: {textAnchor: 'middle'} }} tick={{ fill: '#81E6D9' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#F6AD55" label={{ value: 'Temp (°F)', angle: 90, position: 'insideRight', fill: '#F6AD55', style: {textAnchor: 'middle'} }} tick={{ fill: '#F6AD55' }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #2D3748', borderRadius: '0.75rem' }}
+                      labelStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
+                      formatter={(value, name) => [value, name]}
+                      labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                    />
+                    <Legend wrapperStyle={{ bottom: 0 }}/>
+                    <Line yAxisId="left" type="monotone" dataKey="aqi" name="AQI (US)" stroke="#81E6D9" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="tempF" name="Temperature (°F)" stroke="#F6AD55" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </main>
             </div>
           </div>
         );
       }
 
-      return (
-        <div className="bg-[#0d1117] text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center min-h-screen">
-          <div className="w-full max-w-6xl">
-            <header className="text-center mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
-              <p className="text-lg text-gray-400 mt-2">An interactive visualization of weekly US AQI and Temperature (°F) data.</p>
-            </header>
-
-            <main className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
-              <ResponsiveContainer width="100%" height={500}>
-                <LineChart
-                  data={chartData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 50 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-                  <XAxis 
-                    dataKey="date" 
-                    tickFormatter={formatXAxis} 
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                    tick={{ fill: '#A0AEC0' }}
-                    stroke="#A0AEC0"
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis yAxisId="left" stroke="#81E6D9" label={{ value: 'US AQI', angle: -90, position: 'insideLeft', fill: '#81E6D9', style: {textAnchor: 'middle'} }} tick={{ fill: '#81E6D9' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#F6AD55" label={{ value: 'Temp (°F)', angle: 90, position: 'insideRight', fill: '#F6AD55', style: {textAnchor: 'middle'} }} tick={{ fill: '#F6AD55' }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #2D3748', borderRadius: '0.75rem' }}
-                    labelStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
-                    formatter={(value, name) => [value, name]}
-                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                  />
-                  <Legend wrapperStyle={{ bottom: 0 }}/>
-                  <Line yAxisId="left" type="monotone" dataKey="aqi" name="AQI (US)" stroke="#81E6D9" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-                  <Line yAxisId="right" type="monotone" dataKey="tempF" name="Temperature (°F)" stroke="#F6AD55" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </main>
-          </div>
-        </div>
-      );
-    }
-
-    const container = document.getElementById('root');
-    ReactDOM.render(<App />, container);
+      const container = document.getElementById('root');
+      ReactDOM.render(<App />, container);
+    };
   </script>
 </body>
 </html>
