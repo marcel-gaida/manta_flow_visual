@@ -29,14 +29,17 @@
         
         <main class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
             <!-- The chart will be rendered inside this canvas element -->
-            <canvas id="aqiChart"></canvas>
+            <div style="height:500px;"><canvas id="aqiChart"></canvas></div>
+            <footer class="text-center text-xs text-gray-500 pt-4">
+                <!-- This paragraph will display the data loading status -->
+                <p id="data-status"></p>
+            </footer>
         </main>
     </div>
 
     <script>
-        // Data is embedded directly to ensure the preview works reliably.
-        // For your live GitHub Pages site, you can replace this with a fetch call if you prefer.
-        const jsonData = [
+        // Placeholder data to be used as a fallback if the live fetch fails.
+        const placeholderJsonData = [
             {"Recorded At: Week":"2023-07-30","Average of Aqi Us":40.70408163265306,"Average of Temperature in F":72.59183673469389},
             {"Recorded At: Week":"2023-08-06","Average of Aqi Us":61.86335403726708,"Average of Temperature in F":74.46211180124223},
             {"Recorded At: Week":"2023-08-13","Average of Aqi Us":38.32298136645962,"Average of Temperature in F":74.37267080745342},
@@ -103,7 +106,7 @@
             {"Recorded At: Week":"2024-10-13","Average of Aqi Us":26.39751552795031,"Average of Temperature in F":54.25962732919255},
             {"Recorded At: Week":"2024-10-20","Average of Aqi Us":43.5776397515528,"Average of Temperature in F":61.54906832298137},
             {"Recorded At: Week":"2024-10-27","Average of Aqi Us":34.6875,"Average of Temperature in F":58.9325},
-            {"Recorded At: Week":"2024-11-03","Average of Aqi Us":37.753086419753085,"Average of Temperature in F":56.48888888888889},
+            {"Recorded At: Week":"2024-11-03","Average of Aqi Us":37.753086419753085,"Average of Temperature in F":56.488888888889},
             {"Recorded At: Week":"2024-11-10","Average of Aqi Us":28.11875,"Average of Temperature in F":48.70625},
             {"Recorded At: Week":"2024-11-17","Average of Aqi Us":32.553459119496855,"Average of Temperature in F":48.33584905660378},
             {"Recorded At: Week":"2024-11-24","Average of Aqi Us":35.49358974358974,"Average of Temperature in F":44.11538461538461},
@@ -136,11 +139,10 @@
             {"Recorded At: Week":"2025-06-01","Average of Aqi Us":39.451923076923074,"Average of Temperature in F":66.00961538461539}
         ];
 
-        // This function runs once the DOM is fully loaded.
-        document.addEventListener('DOMContentLoaded', () => {
+        // This function draws the chart using the provided data.
+        function renderChart(jsonData) {
             const labels = jsonData.map(d => {
                 const date = new Date(d["Recorded At: Week"]);
-                // Formatting to a more readable 'Mon YYYY' format
                 return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
             });
             const aqiData = jsonData.map(d => parseFloat(d["Average of Aqi Us"]).toFixed(2));
@@ -148,26 +150,23 @@
 
             const data = {
                 labels: labels,
-                datasets: [
-                    {
-                        label: 'AQI (US)',
-                        data: aqiData,
-                        borderColor: '#81E6D9', // A vibrant cyan
-                        backgroundColor: 'rgba(129, 230, 217, 0.2)',
-                        yAxisID: 'yAqi',
-                        tension: 0.1,
-                        pointRadius: 0, // Hide points for a cleaner line
-                    },
-                    {
-                        label: 'Temperature (°F)',
-                        data: tempData,
-                        borderColor: '#F6AD55', // A warm orange
-                        backgroundColor: 'rgba(246, 173, 85, 0.2)',
-                        yAxisID: 'yTemp',
-                        tension: 0.1,
-                        pointRadius: 0,
-                    }
-                ]
+                datasets: [{
+                    label: 'AQI (US)',
+                    data: aqiData,
+                    borderColor: '#81E6D9',
+                    backgroundColor: 'rgba(129, 230, 217, 0.2)',
+                    yAxisID: 'yAqi',
+                    tension: 0.1,
+                    pointRadius: 0,
+                }, {
+                    label: 'Temperature (°F)',
+                    data: tempData,
+                    borderColor: '#F6AD55',
+                    backgroundColor: 'rgba(246, 173, 85, 0.2)',
+                    yAxisID: 'yTemp',
+                    tension: 0.1,
+                    pointRadius: 0,
+                }]
             };
 
             const config = {
@@ -176,10 +175,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
                         x: {
                             ticks: { color: '#A0AEC0' },
@@ -189,31 +185,21 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
-                            title: {
-                                display: true,
-                                text: 'US AQI',
-                                color: '#81E6D9',
-                            },
+                            title: { display: true, text: 'US AQI', color: '#81E6D9' },
                             ticks: { color: '#81E6D9' },
-                            grid: { drawOnChartArea: false } // Only show grid for the primary axis
+                            grid: { drawOnChartArea: false }
                         },
                         yTemp: {
                             type: 'linear',
                             display: true,
                             position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Temp (°F)',
-                                color: '#F6AD55',
-                            },
+                            title: { display: true, text: 'Temp (°F)', color: '#F6AD55' },
                             ticks: { color: '#F6AD55' },
                             grid: { drawOnChartArea: false }
                         }
                     },
                     plugins: {
-                        legend: {
-                            labels: { color: '#E2E8F0' }
-                        },
+                        legend: { labels: { color: '#E2E8F0' } },
                         tooltip: {
                             backgroundColor: '#1A202C',
                             titleColor: '#E2E8F0',
@@ -225,7 +211,34 @@
 
             const ctx = document.getElementById('aqiChart').getContext('2d');
             new Chart(ctx, config);
-        });
+        }
+
+        // This function initializes the page. It tries to fetch live data
+        // and falls back to placeholder data on failure.
+        async function initializePage() {
+            const statusElement = document.getElementById('data-status');
+            const dataUrl = './bin/air_quality_data.json';
+            
+            try {
+                const response = await fetch(dataUrl);
+                if (!response.ok) {
+                    // This will trigger the catch block if the file is not found (e.g., 404)
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const liveData = await response.json();
+                renderChart(liveData);
+                statusElement.textContent = 'Live data loaded successfully.';
+                statusElement.style.color = '#81E6D9'; // Cyan for success
+            } catch (error) {
+                console.error("Could not load live data:", error);
+                renderChart(placeholderJsonData); // Use embedded data as a fallback
+                statusElement.textContent = 'Failed to load live data. Displaying placeholder data.';
+                statusElement.style.color = '#F6AD55'; // Orange for fallback
+            }
+        }
+
+        // Run the initializer function once the DOM is fully loaded.
+        document.addEventListener('DOMContentLoaded', initializePage);
     </script>
 </body>
 </html>
