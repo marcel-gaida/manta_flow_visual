@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Air Quality & Temperature Visualization</title>
     
-    <!-- Tailwind CSS for styling -->
+    <!-- Tailwind CSS for overall page styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js Library - A single, reliable script for charting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -16,132 +19,213 @@
         }
     </style>
 </head>
-<body>
-    <!-- The React app will be rendered here. The DOM element exists before scripts run. -->
-    <div id="root"></div>
+<body class="bg-[#0d1117] text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center min-h-screen">
 
-    <!-- SCRIPT LOADING SECTION -->
-    <!-- Using the 'defer' attribute on all external scripts to guarantee sequential execution order -->
-    <!-- after the document has been parsed. This is the key fix for the race condition. -->
+    <div class="w-full max-w-6xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
+            <p class="text-lg text-gray-400 mt-2">An interactive visualization of weekly US AQI and Temperature (°F) data.</p>
+        </header>
+        
+        <main class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
+            <!-- The chart will be rendered inside this canvas element -->
+            <canvas id="aqiChart"></canvas>
+        </main>
+    </div>
 
-    <!-- 1. React and ReactDOM (using specific production versions for stability) -->
-    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" defer></script>
-    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" defer></script>
-    
-    <!-- 2. Recharts Library (depends on React - using a specific version) -->
-    <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js" defer></script>
-    
-    <!-- 3. Babel Standalone (for JSX compilation) -->
-    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" defer></script>
+    <script>
+        // Data is embedded directly to ensure the preview works reliably.
+        // For your live GitHub Pages site, you can replace this with a fetch call if you prefer.
+        const jsonData = [
+            {"Recorded At: Week":"2023-07-30","Average of Aqi Us":40.70408163265306,"Average of Temperature in F":72.59183673469389},
+            {"Recorded At: Week":"2023-08-06","Average of Aqi Us":61.86335403726708,"Average of Temperature in F":74.46211180124223},
+            {"Recorded At: Week":"2023-08-13","Average of Aqi Us":38.32298136645962,"Average of Temperature in F":74.37267080745342},
+            {"Recorded At: Week":"2023-08-20","Average of Aqi Us":48.94409937888199,"Average of Temperature in F":73.46708074534162},
+            {"Recorded At: Week":"2023-08-27","Average of Aqi Us":29.5527950310559,"Average of Temperature in F":70.79503105590062},
+            {"Recorded At: Week":"2023-09-03","Average of Aqi Us":67.63125,"Average of Temperature in F":79.5425},
+            {"Recorded At: Week":"2023-09-10","Average of Aqi Us":33.94409937888199,"Average of Temperature in F":70.2807453416149},
+            {"Recorded At: Week":"2023-09-17","Average of Aqi Us":32.3167701863354,"Average of Temperature in F":64.07577639751553},
+            {"Recorded At: Week":"2023-09-24","Average of Aqi Us":36.87577639751553,"Average of Temperature in F":59.27950310559006},
+            {"Recorded At: Week":"2023-10-01","Average of Aqi Us":57.67701863354037,"Average of Temperature in F":67.20621118012423},
+            {"Recorded At: Week":"2023-10-08","Average of Aqi Us":25.565217391304348,"Average of Temperature in F":56.16024844720497},
+            {"Recorded At: Week":"2023-10-15","Average of Aqi Us":20.217391304347826,"Average of Temperature in F":56.42857142857143},
+            {"Recorded At: Week":"2023-10-22","Average of Aqi Us":32.0807453416149,"Average of Temperature in F":59.80496894409938},
+            {"Recorded At: Week":"2023-10-29","Average of Aqi Us":25.254658385093168,"Average of Temperature in F":48.546583850931675},
+            {"Recorded At: Week":"2023-11-05","Average of Aqi Us":36.5679012345679,"Average of Temperature in F":50.21111111111111},
+            {"Recorded At: Week":"2023-11-12","Average of Aqi Us":33.52173913043478,"Average of Temperature in F":47.149068322981364},
+            {"Recorded At: Week":"2023-11-19","Average of Aqi Us":21.267080745341615,"Average of Temperature in F":42.990062111801244},
+            {"Recorded At: Week":"2023-11-26","Average of Aqi Us":44.267080745341615,"Average of Temperature in F":40.66459627329193},
+            {"Recorded At: Week":"2023-12-03","Average of Aqi Us":39.285714285714285,"Average of Temperature in F":41.68198757763975},
+            {"Recorded At: Week":"2023-12-10","Average of Aqi Us":32.6583850931677,"Average of Temperature in F":42.49813664596273},
+            {"Recorded At: Week":"2023-12-17","Average of Aqi Us":25.882716049382716,"Average of Temperature in F":39.72222222222222},
+            {"Recorded At: Week":"2023-12-24","Average of Aqi Us":47.06211180124224,"Average of Temperature in F":44.756521739130434},
+            {"Recorded At: Week":"2023-12-31","Average of Aqi Us":38.39751552795031,"Average of Temperature in F":36.18136645962733},
+            {"Recorded At: Week":"2024-01-07","Average of Aqi Us":23.540372670807453,"Average of Temperature in F":41.97267080745341},
+            {"Recorded At: Week":"2024-01-14","Average of Aqi Us":33.8944099378882,"Average of Temperature in F":27.080745341614907},
+            {"Recorded At: Week":"2024-01-21","Average of Aqi Us":40.770186335403725,"Average of Temperature in F":37.511801242236025},
+            {"Recorded At: Week":"2024-01-28","Average of Aqi Us":27.857142857142858,"Average of Temperature in F":37.13167701863354},
+            {"Recorded At: Week":"2024-02-04","Average of Aqi Us":35.093167701863354,"Average of Temperature in F":39.47950310559006},
+            {"Recorded At: Week":"2024-02-11","Average of Aqi Us":28.08695652173913,"Average of Temperature in F":36.22608695652174},
+            {"Recorded At: Week":"2024-02-18","Average of Aqi Us":27.391304347826086,"Average of Temperature in F":35.55527950310559},
+            {"Recorded At: Week":"2024-02-25","Average of Aqi Us":28.17391304347826,"Average of Temperature in F":40.619875776397514},
+            {"Recorded At: Week":"2024-03-03","Average of Aqi Us":20.075949367088607,"Average of Temperature in F":46.87848101265823},
+            {"Recorded At: Week":"2024-03-10","Average of Aqi Us":30.86875,"Average of Temperature in F":50.1125},
+            {"Recorded At: Week":"2024-03-17","Average of Aqi Us":22.285714285714285,"Average of Temperature in F":41.60372670807453},
+            {"Recorded At: Week":"2024-03-24","Average of Aqi Us":29.6583850931677,"Average of Temperature in F":43.58260869565217},
+            {"Recorded At: Week":"2024-03-31","Average of Aqi Us":20.79874213836478,"Average of Temperature in F":45.16603773584906},
+            {"Recorded At: Week":"2024-04-07","Average of Aqi Us":27.180124223602484,"Average of Temperature in F":53.6111801242236},
+            {"Recorded At: Week":"2024-04-14","Average of Aqi Us":22.356164383561645,"Average of Temperature in F":54.43835616438356},
+            {"Recorded At: Week":"2024-04-21","Average of Aqi Us":23.93167701863354,"Average of Temperature in F":49.787577639751554},
+            {"Recorded At: Week":"2024-04-28","Average of Aqi Us":38.0807453416149,"Average of Temperature in F":59.313043478260866},
+            {"Recorded At: Week":"2024-05-05","Average of Aqi Us":31.617283950617284,"Average of Temperature in F":59.25555555555555},
+            {"Recorded At: Week":"2024-05-12","Average of Aqi Us":28.285714285714285,"Average of Temperature in F":58.89937888198757},
+            {"Recorded At: Week":"2024-05-19","Average of Aqi Us":38.130434782608695,"Average of Temperature in F":68.58136645962733},
+            {"Recorded At: Week":"2024-05-26","Average of Aqi Us":36.149068322981366,"Average of Temperature in F":68.24596273291925},
+            {"Recorded At: Week":"2024-06-02","Average of Aqi Us":45.36875,"Average of Temperature in F":72.23},
+            {"Recorded At: Week":"2024-06-09","Average of Aqi Us":36.72049689440994,"Average of Temperature in F":69.95652173913044},
+            {"Recorded At: Week":"2024-06-16","Average of Aqi Us":43.5776397515528,"Average of Temperature in F":76.5304347826087},
+            {"Recorded At: Week":"2024-06-23","Average of Aqi Us":39.391304347826086,"Average of Temperature in F":75.30062111801243},
+            {"Recorded At: Week":"2024-06-30","Average of Aqi Us":47.53416149068323,"Average of Temperature in F":75.06583850931676},
+            {"Recorded At: Week":"2024-07-07","Average of Aqi Us":44.608695652173914,"Average of Temperature in F":79.50434782608696},
+            {"Recorded At: Week":"2024-07-14","Average of Aqi Us":51.32075471698113,"Average of Temperature in F":78.94716981132075},
+            {"Recorded At: Week":"2024-07-21","Average of Aqi Us":46.435897435897434,"Average of Temperature in F":75.91538461538461},
+            {"Recorded At: Week":"2024-07-28","Average of Aqi Us":57.375,"Average of Temperature in F":79.2625},
+            {"Recorded At: Week":"2024-08-04","Average of Aqi Us":38.81366459627329,"Average of Temperature in F":74.54037267080746},
+            {"Recorded At: Week":"2024-08-11","Average of Aqi Us":52.64779874213836,"Average of Temperature in F":74.1245283018868},
+            {"Recorded At: Week":"2024-08-18","Average of Aqi Us":39.50310559006211,"Average of Temperature in F":69.71055900621118},
+            {"Recorded At: Week":"2024-08-25","Average of Aqi Us":44.66875,"Average of Temperature in F":73.68125},
+            {"Recorded At: Week":"2024-09-01","Average of Aqi Us":32.01863354037267,"Average of Temperature in F":68.41366459627329},
+            {"Recorded At: Week":"2024-09-08","Average of Aqi Us":37.49689440993789,"Average of Temperature in F":67.18385093167701},
+            {"Recorded At: Week":"2024-09-15","Average of Aqi Us":35.838509316770186,"Average of Temperature in F":69.48695652173913},
+            {"Recorded At: Week":"2024-09-22","Average of Aqi Us":24.8944099378882,"Average of Temperature in F":64.69068322981366},
+            {"Recorded At: Week":"2024-09-29","Average of Aqi Us":26.229813664596273,"Average of Temperature in F":63.30434782608695},
+            {"Recorded At: Week":"2024-10-06","Average of Aqi Us":25.608695652173914,"Average of Temperature in F":60.24099378881988},
+            {"Recorded At: Week":"2024-10-13","Average of Aqi Us":26.39751552795031,"Average of Temperature in F":54.25962732919255},
+            {"Recorded At: Week":"2024-10-20","Average of Aqi Us":43.5776397515528,"Average of Temperature in F":61.54906832298137},
+            {"Recorded At: Week":"2024-10-27","Average of Aqi Us":34.6875,"Average of Temperature in F":58.9325},
+            {"Recorded At: Week":"2024-11-03","Average of Aqi Us":37.753086419753085,"Average of Temperature in F":56.48888888888889},
+            {"Recorded At: Week":"2024-11-10","Average of Aqi Us":28.11875,"Average of Temperature in F":48.70625},
+            {"Recorded At: Week":"2024-11-17","Average of Aqi Us":32.553459119496855,"Average of Temperature in F":48.33584905660378},
+            {"Recorded At: Week":"2024-11-24","Average of Aqi Us":35.49358974358974,"Average of Temperature in F":44.11538461538461},
+            {"Recorded At: Week":"2024-12-01","Average of Aqi Us":42.0974025974026,"Average of Temperature in F":34.17402597402597},
+            {"Recorded At: Week":"2024-12-08","Average of Aqi Us":42.31612903225806,"Average of Temperature in F":40.941935483870964},
+            {"Recorded At: Week":"2024-12-15","Average of Aqi Us":33.22012578616352,"Average of Temperature in F":40.30943396226415},
+            {"Recorded At: Week":"2024-12-22","Average of Aqi Us":52.22360248447205,"Average of Temperature in F":29.920496894409936},
+            {"Recorded At: Week":"2024-12-29","Average of Aqi Us":31.73913043478261,"Average of Temperature in F":42.095652173913045},
+            {"Recorded At: Week":"2025-01-05","Average of Aqi Us":28.327044025157233,"Average of Temperature in F":29.486792452830187},
+            {"Recorded At: Week":"2025-01-12","Average of Aqi Us":53.608695652173914,"Average of Temperature in F":32.40248447204969},
+            {"Recorded At: Week":"2025-01-19","Average of Aqi Us":52.72670807453416,"Average of Temperature in F":24.375155279503105},
+            {"Recorded At: Week":"2025-01-26","Average of Aqi Us":46.093167701863354,"Average of Temperature in F":36.44968944099379},
+            {"Recorded At: Week":"2025-02-02","Average of Aqi Us":39.26086956521739,"Average of Temperature in F":33.95652173913044},
+            {"Recorded At: Week":"2025-02-09","Average of Aqi Us":44.372670807453416,"Average of Temperature in F":33.3304347826087},
+            {"Recorded At: Week":"2025-02-16","Average of Aqi Us":29.72670807453416,"Average of Temperature in F":28.757763975155278},
+            {"Recorded At: Week":"2025-02-23","Average of Aqi Us":47.47826086956522,"Average of Temperature in F":43.35900621118012},
+            {"Recorded At: Week":"2025-03-02","Average of Aqi Us":34.80745341614907,"Average of Temperature in F":39.2},
+            {"Recorded At: Week":"2025-03-09","Average of Aqi Us":34.49685534591195,"Average of Temperature in F":45.74339622641509},
+            {"Recorded At: Week":"2025-03-16","Average of Aqi Us":32.1625,"Average of Temperature in F":47.85125},
+            {"Recorded At: Week":"2025-03-23","Average of Aqi Us":39.94904458598726,"Average of Temperature in F":47.45477707006369},
+            {"Recorded At: Week":"2025-03-30","Average of Aqi Us":37.34838709677419,"Average of Temperature in F":50.8941935483871},
+            {"Recorded At: Week":"2025-04-06","Average of Aqi Us":32.03246753246753,"Average of Temperature in F":41.97012987012987},
+            {"Recorded At: Week":"2025-04-13","Average of Aqi Us":39.90322580645161,"Average of Temperature in F":53.611612903225804},
+            {"Recorded At: Week":"2025-04-20","Average of Aqi Us":42.77272727272727,"Average of Temperature in F":61.57142857142857},
+            {"Recorded At: Week":"2025-04-27","Average of Aqi Us":40.25,"Average of Temperature in F":63.42894736842105},
+            {"Recorded At: Week":"2025-05-04","Average of Aqi Us":34.96103896103896,"Average of Temperature in F":60.98701298701299},
+            {"Recorded At: Week":"2025-05-11","Average of Aqi Us":48.785714285714285,"Average of Temperature in F":64.30649350649351},
+            {"Recorded At: Week":"2025-05-18","Average of Aqi Us":21.675324675324675,"Average of Temperature in F":56.8025974025974},
+            {"Recorded At: Week":"2025-05-25","Average of Aqi Us":33.96052631578947,"Average of Temperature in F":61.794736842105266},
+            {"Recorded At: Week":"2025-06-01","Average of Aqi Us":39.451923076923074,"Average of Temperature in F":66.00961538461539}
+        ];
 
-    <!-- 4. Your Application Code (Babel will find and compile this script after it runs) -->
-    <script type="text/babel" data-presets="react">
-        // By the time this code runs, all deferred scripts above are guaranteed to be loaded.
-        const { useState, useEffect } = React;
-        const { createRoot } = ReactDOM;
-        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = Recharts;
+        // This function runs once the DOM is fully loaded.
+        document.addEventListener('DOMContentLoaded', () => {
+            const labels = jsonData.map(d => {
+                const date = new Date(d["Recorded At: Week"]);
+                // Formatting to a more readable 'Mon YYYY' format
+                return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            });
+            const aqiData = jsonData.map(d => parseFloat(d["Average of Aqi Us"]).toFixed(2));
+            const tempData = jsonData.map(d => parseFloat(d["Average of Temperature in F"]).toFixed(2));
 
-        const DATA_URL = './bin/air_quality_data.json';
-
-        const formatXAxis = (tickItem) => {
-            const date = new Date(tickItem);
-            return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-        };
-
-        function App() {
-            const [chartData, setChartData] = useState([]);
-            const [isLoading, setIsLoading] = useState(true);
-            const [error, setError] = useState(null);
-
-            useEffect(() => {
-                const fetchData = async () => {
-                    try {
-                        const response = await fetch(DATA_URL);
-                        if (!response.ok) {
-                            throw new Error(`Failed to fetch data. Ensure 'bin/air_quality_data.json' exists on the 'gh-pages' branch.`);
-                        }
-                        const jsonData = await response.json();
-                        const formattedData = jsonData.map(d => ({
-                            date: d["Recorded At: Week"],
-                            aqi: parseFloat(d["Average of Aqi Us"]).toFixed(2),
-                            tempF: parseFloat(d["Average of Temperature in F"]).toFixed(2),
-                        }));
-                        setChartData(formattedData);
-                    } catch (err) {
-                        setError(err.message);
-                    } finally {
-                        setIsLoading(false);
+            const data = {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'AQI (US)',
+                        data: aqiData,
+                        borderColor: '#81E6D9', // A vibrant cyan
+                        backgroundColor: 'rgba(129, 230, 217, 0.2)',
+                        yAxisID: 'yAqi',
+                        tension: 0.1,
+                        pointRadius: 0, // Hide points for a cleaner line
+                    },
+                    {
+                        label: 'Temperature (°F)',
+                        data: tempData,
+                        borderColor: '#F6AD55', // A warm orange
+                        backgroundColor: 'rgba(246, 173, 85, 0.2)',
+                        yAxisID: 'yTemp',
+                        tension: 0.1,
+                        pointRadius: 0,
                     }
-                };
-                fetchData();
-            }, []);
+                ]
+            };
 
-            if (isLoading) {
-                return (
-                    <div className="text-white min-h-screen p-8 flex justify-center items-center">
-                        <h2 className="text-2xl text-cyan-400 animate-pulse">Loading Visualization Data...</h2>
-                    </div>
-                );
-            }
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#A0AEC0' },
+                            grid: { color: 'rgba(160, 174, 192, 0.2)' }
+                        },
+                        yAqi: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'US AQI',
+                                color: '#81E6D9',
+                            },
+                            ticks: { color: '#81E6D9' },
+                            grid: { drawOnChartArea: false } // Only show grid for the primary axis
+                        },
+                        yTemp: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Temp (°F)',
+                                color: '#F6AD55',
+                            },
+                            ticks: { color: '#F6AD55' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E2E8F0' }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1A202C',
+                            titleColor: '#E2E8F0',
+                            bodyColor: '#E2E8F0',
+                        }
+                    }
+                }
+            };
 
-            if (error) {
-                return (
-                    <div className="text-white min-h-screen p-8 flex justify-center items-center">
-                        <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-lg">
-                            <h2 className="text-2xl font-bold text-red-300">Error Loading Visualization</h2>
-                            <p className="mt-2 text-red-200">{error}</p>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="bg-[#0d1117] text-white p-4 sm:p-6 lg:p-8 flex flex-col items-center min-h-screen">
-                    <div className="w-full max-w-6xl">
-                        <header className="text-center mb-8">
-                            <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
-                            <p className="text-lg text-gray-400 mt-2">An interactive visualization of weekly US AQI and Temperature (°F) data.</p>
-                        </header>
-                        
-                        <main className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
-                            <ResponsiveContainer width="100%" height={500}>
-                                <LineChart
-                                    data={chartData}
-                                    margin={{ top: 5, right: 30, left: 20, bottom: 50 }}
-                                >
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" />
-                                    <XAxis 
-                                        dataKey="date" 
-                                        tickFormatter={formatXAxis} 
-                                        angle={-45}
-                                        textAnchor="end"
-                                        height={70}
-                                        tick={{ fill: '#A0AEC0' }}
-                                        stroke="#A0AEC0"
-                                        interval="preserveStartEnd"
-                                    />
-                                    <YAxis yAxisId="left" stroke="#81E6D9" label={{ value: 'US AQI', angle: -90, position: 'insideLeft', fill: '#81E6D9', style: {textAnchor: 'middle'} }} tick={{ fill: '#81E6D9' }} />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#F6AD55" label={{ value: 'Temp (°F)', angle: 90, position: 'insideRight', fill: '#F6AD55', style: {textAnchor: 'middle'} }} tick={{ fill: '#F6AD55' }} />
-                                    <Tooltip 
-                                        contentStyle={{ backgroundColor: '#1A202C', border: '1px solid #2D3748', borderRadius: '0.75rem' }}
-                                        labelStyle={{ color: '#E2E8F0', fontWeight: 'bold' }}
-                                        formatter={(value, name) => [value, name]}
-                                        labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                                    />
-                                    <Legend wrapperStyle={{ bottom: 0 }}/>
-                                    <Line yAxisId="left" type="monotone" dataKey="aqi" name="AQI (US)" stroke="#81E6D9" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-                                    <Line yAxisId="right" type="monotone" dataKey="tempF" name="Temperature (°F)" stroke="#F6AD55" strokeWidth={2} dot={false} activeDot={{ r: 8 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </main>
-                    </div>
-                </div>
-            );
-        }
-
-        const container = document.getElementById('root');
-        const root = createRoot(container);
-        root.render(<App />);
+            const ctx = document.getElementById('aqiChart').getContext('2d');
+            new Chart(ctx, config);
+        });
     </script>
 </body>
 </html>
