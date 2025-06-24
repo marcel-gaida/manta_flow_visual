@@ -48,7 +48,9 @@
             <header class="text-center mb-8">
                 <h1 class="text-3xl sm:text-4xl font-bold text-cyan-400">Weekly Air Quality & Temperature</h1>
                 <p class="text-lg text-gray-400 mt-2">An interactive visualization of weekly US AQI and Temperature (°F) data for New York.</p>
-                <p class="text-lg text-gray-400 mt-2">The data has been collected using a GitHub Action from my <a href="https://github.com/marcel-gaida/AirAlert_Notification" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline">AirAlert_Notification project</a>.</p>
+                <p class="text-lg text-gray-400 mt-2">The data has been collected using a GitHub Action from the <a href="https://github.com/marcel-gaida/AirAlert_Notification" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline">AirAlert_Notification project</a>.</p>
+                <!-- This new paragraph will display the dynamic date range -->
+                <p id="data-range" class="text-md text-gray-500 mt-2"></p>
             </header>
             
             <main class="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 w-full">
@@ -89,6 +91,28 @@
 
         // This function draws the chart using the provided data.
         function renderChart(jsonData) {
+            // Get the element for the date range display
+            const dataRangeElement = document.getElementById('data-range');
+
+            // Set the date range text based on the first and last data points
+            if (jsonData && jsonData.length > 0) {
+                const startDateString = jsonData[0]["Recorded At: Week"];
+                const endDateString = jsonData[jsonData.length - 1]["Recorded At: Week"];
+                
+                // Helper function to format dates consistently
+                const formatDate = (dateString) => {
+                    const date = new Date(dateString);
+                    // Adjust for timezone to avoid off-by-one day errors
+                    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+                    const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+                    return adjustedDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                };
+
+                dataRangeElement.textContent = `The data range is from ${formatDate(startDateString)} until ${formatDate(endDateString)}.`;
+            } else {
+                dataRangeElement.textContent = 'Data range is currently unavailable.';
+            }
+
             const labels = jsonData.map(d => {
                 const date = new Date(d["Recorded At: Week"]);
                 return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -183,7 +207,7 @@
             } catch (error) {
                 console.error("Could not load live data:", error);
                 renderChart(placeholderJsonData); // Use embedded data as a fallback
-                statusElement.textContent = 'Failed to load live data. Displaying placeholder data from ' + placeholderJsonData[0]["Recorded At: Week"] + " to " + placeholderJsonData[placeholderJsonData.length-1]["Recorded At: Week"] +'.';
+                statusElement.textContent = 'Failed to load live data. Displaying placeholder data.';
                 statusElement.style.color = '#F6AD55'; // Orange for fallback
             }
         }
